@@ -6,6 +6,7 @@
 - refactor!(CLI): `path` is now a `--file`/`-f` option on all commands instead of a positional argument.
 - feat(CLI): `tsk init` writes a `.gitignore` in the sidecar directory to exclude `daemon.pid`, `daemon.url`, and `daemon.log`.
 - feat(UI): browser tab title now shows `todofile - <project title>` using the H1 from the TODO file.
+- refactor!(CLI): remove deprecated `tsk task add` / `tsk task remove` commands.
 - refactor!(CLI): make option description and argument in cli tsk add
 
 ## 0.2.0 (2026-05-29)

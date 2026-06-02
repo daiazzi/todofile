@@ -537,41 +537,6 @@ def annotate(note_text: str, path: Path | None, project: str | None) -> None:
     _console.print(f"tsk: annotated ({note_id}).")
 
 
-@cli.group(hidden=True)
-def task() -> None:
-    """(Deprecated) Use `tsk add` / `tsk remove`."""
-
-
-@task.command(name="add")
-@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
-@click.option("--description", "-d", required=True, help="Task description.")
-@click.option("--tag", "-t", default=None, help="Optional category tag.")
-@click.option("--parent", "-p", "parent_hash", default=None, help="Parent task hash for a subtask.")
-@click.option("--project", "-P", default=None, help="Project to add under.")
-@click.option("--start-date", "-s", "start", type=str, default=None, help="Start date YYYY-MM-DD.")
-@click.option("--end-date", "-e", "end", type=str, default=None, help="End date YYYY-MM-DD.")
-@click.option("--duration", type=int, default=None, help="Duration in days (positive).")
-def task_add(
-    path: Path | None,
-    description: str,
-    tag: str | None,
-    parent_hash: str | None,
-    project: str | None,
-    start: str | None,
-    end: str | None,
-    duration: int | None,
-) -> None:
-    """(Deprecated) Add a new task to the markdown."""
-    _add_task(path, description, tag, parent_hash, project, start, end, duration)
-
-
-@task.command(name="remove")
-@click.argument("hash")
-@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
-def task_remove(hash: str, path: Path | None) -> None:
-    """(Deprecated) Remove the task with the given hash."""
-    _remove_task(hash, path)
-
 
 @cli.command("config")
 @click.option("--dark-mode", "dark_mode", is_flag=True, help="Set the UI theme to dark.")
@@ -848,7 +813,6 @@ def main() -> None:
     argv = sys.argv[1:]
     known_top = {
         "init",
-        "task",
         "add",
         "remove",
         "annotate",
