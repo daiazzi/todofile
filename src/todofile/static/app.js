@@ -238,6 +238,15 @@ async function postNoteContent(noteId, content) {
   return r.json();
 }
 
+async function postNoteRemove(noteId) {
+  const r = await fetch(`/api/notes/${noteId}/remove`, { method: 'POST' });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({ error: 'remove failed' }));
+    throw new Error(data.error || 'remove failed');
+  }
+  return r.json();
+}
+
 async function postConfig(patch) {
   const r = await fetch('/api/config', {
     method: 'POST',
@@ -433,20 +442,69 @@ function renderProjectNotes(notes, projectName) {
   const body = document.createElement('div');
   body.className = 'project-notes-body';
   for (const note of notes) {
+    const noteWrap = document.createElement('div');
+    noteWrap.className = 'project-note-wrap';
+
     const item = document.createElement('div');
     item.className = 'project-note markdown-body';
     item.innerHTML = renderMarkdown(note.content || '');
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
     item.setAttribute('aria-label', 'Open note');
-    item.addEventListener('click', () => openNoteModal(note, projectName));
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.project-note-actions')) return;
+      openNoteModal(note, projectName);
+    });
     item.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openNoteModal(note, projectName);
       }
     });
-    body.appendChild(item);
+    noteWrap.appendChild(item);
+
+    const actionsCell = document.createElement('div');
+    actionsCell.className = 'project-note-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'task-action-btn task-edit-btn';
+    editBtn.title = 'Edit note';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openNoteModal(note, projectName, { edit: true });
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'task-action-btn task-remove-btn';
+    removeBtn.title = 'Remove note';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!note.hash) {
+        toast('Note has no id yet. Refresh and try again.', 'error');
+        return;
+      }
+      if (!confirm(`Remove note ${note.hash}?`)) return;
+      if (removeBtn.dataset.busy === '1') return;
+      removeBtn.dataset.busy = '1';
+      try {
+        const data = await postNoteRemove(note.hash);
+        applyData(data);
+        render();
+      } catch (err) {
+        toast(err.message, 'error');
+      } finally {
+        delete removeBtn.dataset.busy;
+      }
+    });
+
+    actionsCell.appendChild(editBtn);
+    actionsCell.appendChild(removeBtn);
+    noteWrap.appendChild(actionsCell);
+    body.appendChild(noteWrap);
   }
   wrap.appendChild(body);
   return wrap;
@@ -965,7 +1023,7 @@ function closeModal() {
   host.innerHTML = '';
 }
 
-function openNoteModal(note, projectName) {
+function openNoteModal(note, projectName, options = {}) {
   const host = $('#modal-host');
   host.hidden = false;
   host.innerHTML = '';
@@ -1080,6 +1138,8 @@ function openNoteModal(note, projectName) {
 
   host.appendChild(modal);
   host.addEventListener('click', closeModal, { once: true });
+
+  if (options.edit) enterEdit();
 }
 
 // ---------- markdown renderer (minimal subset) ----------

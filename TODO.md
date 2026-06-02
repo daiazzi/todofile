@@ -18,9 +18,11 @@
 - [x] FEAT(9bc04): the tab should show the title of the project (the h1)
 - [x] FEAT(f9786): support 3 levels of nested tasks
 - [x] FEAT(b73ed): add hover only icons for edit and remove tasks
-- [ ] FEAT(b73ed): add hover only icons for edit and remove notes
+- [x] FEAT(4cb3c): add hover only icons for edit and remove notes
 - [ ] FEAT(aae8b): New type of task `deadline` that has only one date and a different representation on the gantt
 - [ ] FEAT(8875a): description or subtitle for projects
   This requires some thought because it is not clear how to code it into the md and how to render it in the UI.
 - [ ] FIX(684c8): edit of tasks in the popup window does not work
 - [ ] REFACTOR(6d662): Replace httpx with niquests.
+
+### Notes
