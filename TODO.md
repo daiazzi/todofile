@@ -19,6 +19,6 @@
 - [ ] FEAT(e1338): tasks in task panel should be rendered as markdown
 - [ ] FEAT(aae8b): New type of task `deadline` that has only one date and a different representation on the gantt
 - [ ] FIX(684c8): edit of tasks in the popup window does not work
-- [ ] FEAT(9bc04): the tab should show the title of the project (the h1)
+- [x] FEAT(9bc04): the tab should show the title of the project (the h1)
 - [ ] FEAT(f9786): support 3 levels of nested tasks
 - [ ] REFACTOR(6d662): Replace httpx with niquests.

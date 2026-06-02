@@ -352,7 +352,9 @@ function renderTodoPath() {
 }
 
 function renderBrand() {
-  $('#brand').textContent = state.title || 'tsk';
+  const label = state.title || 'tsk';
+  $('#brand').textContent = label;
+  document.title = state.title ? `todofile - ${state.title}` : 'todofile';
 }
 
 function renderShowCompleted() {
