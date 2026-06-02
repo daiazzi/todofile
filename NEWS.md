@@ -1,6 +1,6 @@
 # todofile
 
-## Unreleased
+## 0.3.0 (2026-06-02)
 
 - refactor!: change `tsk init` defaults to light theme, big text, no date columns, and no automatic task dates (`default_duration: 0`).
 - refactor!(CLI): `path` is now a `--file`/`-f` option on all commands instead of a positional argument.
