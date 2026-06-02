@@ -3,6 +3,7 @@
 ## Unreleased
 
 - refactor!: change `tsk init` defaults to light theme, big text, no date columns, and no automatic task dates (`default_duration: 0`).
+- refactor!(CLI): `path` is now a `--file`/`-f` option on all commands instead of a positional argument.
 
 ## 0.2.0 (2026-05-29)
 

@@ -75,7 +75,7 @@ def start(todo_path: Path, *, host: str = "127.0.0.1", port: int | None = None) 
         "-m",
         "todofile.cli",
         "serve",
-        str(todo_path),
+        "--file", str(todo_path),
         "--no-browser",
         "--host",
         host,

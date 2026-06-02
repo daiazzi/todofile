@@ -3,16 +3,17 @@
 ## Tasks
 
 
-- [ ] REFACTOR(8f8dc): change default behaviour:
-  - [ ] (1a868): --light-mode
-  - [ ] (04cfd): --no-show-dates
-  - [ ] (bcf22): --no-show-gantt
-  - [ ] (6c3b1): --no-show-calendar
-  - [ ] (0d800): --no-show-weekends
-  - [ ] (76098): --default-duration 0
-  - [ ] (d440a): --text-size big
-- [ ] FEAT(947f0): add .gitignore in the config folder to ignore daemon files
+- [x] REFACTOR(8f8dc): change default behaviour:
+  - [x] (1a868): --light-mode
+  - [x] (04cfd): --no-show-dates
+  - [x] (bcf22): --no-show-gantt
+  - [x] (6c3b1): --no-show-calendar
+  - [x] (0d800): --no-show-weekends
+  - [x] (76098): --default-duration 0
+  - [x] (d440a): --text-size big
+- [x] REFACTOR(fcb95): make `path` an option instead of an argument in all commands
 - [ ] REFACTOR(afd6c): In `tsk add` option `-d` should be an argument because it is required anyway
+- [ ] FEAT(947f0): add .gitignore in the config folder to ignore daemon files
 - [ ] FEAT(8875a): description or subtitle for projects
 - [ ] FEAT(e1338): tasks in task panel should be rendered as markdown
 - [ ] FEAT(aae8b): New type of task `deadline` that has only one date and a different representation on the gantt
