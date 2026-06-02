@@ -1,9 +1,9 @@
 port: 47209
 theme: light
 text_size: big
-show_dates: true
-show_gantt: true
-show_calendar: true
+show_dates: false
+show_gantt: false
+show_calendar: false
 show_weekends: false
 auto_refresh: true
 default_duration: 0
