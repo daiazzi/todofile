@@ -12,7 +12,7 @@
   - [x] (76098): --default-duration 0
   - [x] (d440a): --text-size big
 - [x] REFACTOR(fcb95): make `path` an option instead of an argument in all commands
-- [ ] REFACTOR(afd6c): In `tsk add` option `-d` should be an argument because it is required anyway
+- [x] REFACTOR(afd6c): In `tsk add` option `-d` should be an argument because it is required anyway
 - [ ] FEAT(947f0): add .gitignore in the config folder to ignore daemon files
 - [ ] FEAT(8875a): description or subtitle for projects
 - [ ] FEAT(e1338): tasks in task panel should be rendered as markdown

@@ -453,8 +453,8 @@ def _remove_task(hash: str, path: Path | None) -> None:
 
 
 @cli.command("add")
+@click.argument("description", type=str, required=True, help="Task description.")
 @click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
-@click.option("--description", "-d", required=True, help="Task description.")
 @click.option("--tag", "-t", default=None, help="Optional category tag.")
 @click.option("--parent", "-p", "parent_hash", default=None, help="Parent task hash for a subtask.")
 @click.option("--project", "-P", default=None, help="Project to add under.")
@@ -462,8 +462,8 @@ def _remove_task(hash: str, path: Path | None) -> None:
 @click.option("--end-date", "-e", "end", type=str, default=None, help="End date YYYY-MM-DD.")
 @click.option("--duration", type=int, default=None, help="Duration in days (positive).")
 def add(
-    path: Path | None,
     description: str,
+    path: Path | None,
     tag: str | None,
     parent_hash: str | None,
     project: str | None,

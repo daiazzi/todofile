@@ -75,7 +75,7 @@ def test_task_add_top_level(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): existing\n")
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["add", "-f", str(p), "-d", "new task", "-t", "api"]
+        cli, ["add", "-f", str(p), "new task", "-t", "api"]
     )
     assert result.exit_code == 0, result.output
     doc = parse(p)
@@ -90,7 +90,7 @@ def test_task_add_subtask(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): parent\n")
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["add", "-f", str(p), "-d", "child", "-p", "a4f9c"]
+        cli, ["add", "-f", str(p), "child", "-p", "a4f9c"]
     )
     assert result.exit_code == 0, result.output
     doc = parse(p)
@@ -104,7 +104,7 @@ def test_task_add_unknown_parent(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["add", "-f", str(p), "-d", "y", "-p", "fffff"]
+        cli, ["add", "-f", str(p), "y", "-p", "fffff"]
     )
     assert result.exit_code != 0
     assert "No task with hash 'fffff'" in result.output
@@ -114,7 +114,7 @@ def test_task_add_multiple_projects_requires_choice(tmp_path: Path):
     p = tmp_path / "TODO.md"
     p.write_text("## a\n- [ ] (aaaaa): x\n## b\n- [ ] (bbbbb): y\n")
     runner = CliRunner()
-    result = runner.invoke(cli, ["add", "-f", str(p), "-d", "z"])
+    result = runner.invoke(cli, ["add", "-f", str(p), "z"])
     assert result.exit_code != 0
     assert "--project" in result.output
 
@@ -124,7 +124,7 @@ def test_task_add_duration_with_start(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["add", "-f", str(p), "-d", "new", "-s", "2026-06-01", "--duration", "5"]
+        cli, ["add", "-f", str(p), "new", "-s", "2026-06-01", "--duration", "5"]
     )
     assert result.exit_code == 0, result.output
     data = load_tasks_yaml(p)
@@ -138,7 +138,7 @@ def test_task_add_duration_alone_errors(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     runner = CliRunner()
     result = runner.invoke(
-        cli, ["add", "-f", str(p), "-d", "new", "--duration", "5"]
+        cli, ["add", "-f", str(p), "new", "--duration", "5"]
     )
     assert result.exit_code != 0
     assert "anchor" in result.output
@@ -151,7 +151,7 @@ def test_task_add_three_dates_errors(tmp_path: Path):
     result = runner.invoke(
         cli,
         [
-            "add", "-f", str(p), "-d", "new",
+            "add", "-f", str(p), "new",
             "-s", "2026-06-01", "-e", "2026-06-10", "--duration", "5",
         ],
     )
@@ -163,7 +163,7 @@ def test_task_add_invalid_date(tmp_path: Path):
     p = tmp_path / "TODO.md"
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     runner = CliRunner()
-    result = runner.invoke(cli, ["add", "-f", str(p), "-d", "new", "-s", "not-a-date"])
+    result = runner.invoke(cli, ["add", "-f", str(p), "new", "-s", "not-a-date"])
     assert result.exit_code != 0
     assert "Invalid date" in result.output
 
