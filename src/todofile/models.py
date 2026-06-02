@@ -65,12 +65,12 @@ class TaskMetadata:
 class Config:
     port: int | None = None
     colors: dict[str, str] = field(default_factory=dict)
-    theme: str = "dark"
-    default_duration: int = 1
-    show_dates: bool = True
+    theme: str = "light"
+    default_duration: int = 0
+    show_dates: bool = False
     show_gantt: bool = False
     show_calendar: bool = False
     show_weekends: bool = False
-    text_size: str = "medium"
+    text_size: str = "big"
     auto_refresh: bool = True
     extra: dict = field(default_factory=dict)

@@ -308,8 +308,8 @@ def test_init_defaults_to_TODO_md_in_cwd(tmp_path: Path, monkeypatch):
     assert (tmp_path / "TODO.md").exists()
 
 
-def test_serve_path_argument_still_works():
+def test_serve_file_option_works():
     runner = CliRunner()
-    result = runner.invoke(cli, ["serve", "/no/such/file/exists.md"])
+    result = runner.invoke(cli, ["serve", "--file", "/no/such/file/exists.md"])
     assert result.exit_code != 0
     assert "File not found" in result.output

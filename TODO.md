@@ -2,42 +2,26 @@
 
 ## Tasks
 
-- [x] REFACTOR(18c87): Rename package to `todofile`.
-  The CLI entry point stays `tsk`.
-- [x] FEAT(1cddf): make the refresh automatic after any edit to the TODO.md file.
-- [x] REFACTOR(a7e8c): Make add and remove first class commands.
-  Tasks are added with the `tsk add` command. And removed with the `tsk remove` command.
-- [x] FIX(47a77): tasks are appended to Notes section if Notes section exists
-  after the last task.
-  Instead it should go under the project's tasks and Notes should always be at the end of the project.
-- [x] FEAT(1a194): Command 'annotate [NOTE_TEXT]' to add a note.t
-  Notes are added with the `tsk annotate` command.
-  Notes are not removed via cli because there is no identifier for them.
-  - [x] REFACTOR(271a1): add hash to notes too so that they can be removed with the `tsk remove` command.
-- [x] FEAT(2cb04): Make the pop up window's content (task) editable.
-- [x] FEAT(33e74): Make notes clickable with popup window like tasks
-  Only the description of the task and the note should be editable.
-- [x] REFACTOR(09067): Default tags should be DOCS, ENV, REFACTOR, FEAT, FIX, PERF, TESTS.
-  Should also start with a colour palette when initializing the project.
-  default: "#8c8c8c"
-  FIX: "#ff0000"
-  FEAT: "#0080ff"
-  REFACTOR: "#ffbf00"
-  PERF: "#ff33ff"
-  TESTS: "#269900"
-  DOCS: "#663300"
-  ENV: "#999900"
-  MISC: "#339999"
-- [x] FEAT(a1b6a): Add `tsk restart [path]` command (performs down and up).
-- [x] FEAT(944a9): use 'Esc' to close task/note popup
-- [x] FIX(d1f2f): When writing the TODO file, after any h (h1, h2, h3) there should be an empty line
-- [x] FEAT(095f3): the `tsk init` command should have the same options as `tsk config` so that the project is initiated already with the correct options. This could be implemented by running config after init that would change everything to default values.
-- [x] FEAT(270df): Align horizontally tasks in task panel with gantt visualisation
-- [x] FEAT(8a283): Make gantt/calendar panel toggle on/off and add tsk config --show-calendar/--no-show-calendar option
-- [x] FEAT(ee1c6): Allow default duration to be 0 - that means that there is not default dates
 
-- [ ] REFACTOR(6d662): Replace httpx with niquests.
-- [ ] REFACTOR(5bd57): In  option  should be an argument because it is required anyway
-- [ ] REFACTOR(afd6c): In `tsk add` option `-d` should be an argument because it is required anyway
+- [x] REFACTOR(8f8dc): change default behaviour:
+  - [x] (1a868): --light-mode
+  - [x] (04cfd): --no-show-dates
+  - [x] (bcf22): --no-show-gantt
+  - [x] (6c3b1): --no-show-calendar
+  - [x] (0d800): --no-show-weekends
+  - [x] (76098): --default-duration 0
+  - [x] (d440a): --text-size big
+- [x] REFACTOR(fcb95): make `path` an option instead of an argument in all commands
+- [x] REFACTOR(afd6c): In `tsk add` option `-d` should be an argument because it is required anyway
+- [x] FEAT(947f0): add .gitignore in the config folder to ignore daemon files
+- [x] REFACTOR(663d3): remove deprecated `tsk task` command
+- [x] FEAT(9bc04): the tab should show the title of the project (the h1)
+- [x] FEAT(f9786): support 3 levels of nested tasks
+- [x] FEAT(b73ed): add hover only icons for edit and remove tasks
+- [x] FEAT(4cb3c): add hover only icons for edit and remove notes
 - [ ] FEAT(aae8b): New type of task `deadline` that has only one date and a different representation on the gantt
-- [ ] FEAT(93fdc): Github action to push versions to gitbucket
+- [ ] FEAT(8875a): description or subtitle for projects
+  This requires some thought because it is not clear how to code it into the md and how to render it in the UI.
+- [ ] REFACTOR(6d662): Replace httpx with niquests.
+
+### Notes

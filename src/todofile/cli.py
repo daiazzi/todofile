@@ -107,7 +107,7 @@ def cli() -> None:
 
 
 @cli.command(hidden=True)
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")  
 @click.option("--no-browser", is_flag=True, help="Do not open the browser on launch.")
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Override the port from config.yaml.")
@@ -123,7 +123,7 @@ def serve(path: Path | None, no_browser: bool, host: str, port: int | None) -> N
 
 
 @cli.command()
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 @click.option("--dark-mode", "dark_mode", is_flag=True, help="Set the UI theme to dark.")
 @click.option("--light-mode", "light_mode", is_flag=True, help="Set the UI theme to light.")
 @click.option(
@@ -193,7 +193,7 @@ def init(
 ) -> None:
     """Create the sidecar directory and stamp hashes into the markdown.
 
-    If no PATH is given, defaults to ./TODO.md in the current directory.
+    If --file is not given, defaults to ./TODO.md in the current directory.
     If the TODO file does not exist, it is created with a default scaffold.
     The parent directory must exist.
     """
@@ -297,7 +297,7 @@ def init(
 
 
 @cli.command()
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Override the port from config.yaml.")
 def up(path: Path | None, host: str, port: int | None) -> None:
@@ -313,7 +313,7 @@ def up(path: Path | None, host: str, port: int | None) -> None:
 
 
 @cli.command()
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 def down(path: Path | None) -> None:
     """Stop the daemon associated with the given TODO file."""
     todo = _resolve_path(path)
@@ -325,7 +325,7 @@ def down(path: Path | None) -> None:
 
 
 @cli.command()
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 @click.option("--host", default="127.0.0.1", show_default=True)
 @click.option("--port", type=int, default=None, help="Override the port from config.yaml.")
 def restart(path: Path | None, host: str, port: int | None) -> None:
@@ -345,7 +345,7 @@ def restart(path: Path | None, host: str, port: int | None) -> None:
     _console.print(f"tsk: open {url}")
 
 @cli.command()
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 def status(path: Path | None) -> None:
     """Show the resolved TODO path and daemon state."""
     todo = _resolve_path(path)
@@ -379,9 +379,14 @@ def _add_task(
         parent_task = doc.tasks_by_hash.get(parent_hash)
         if parent_task is None:
             raise click.ClickException(f"No task with hash '{parent_hash}' in {path}.")
-        if parent_task.parent_hash is not None:
+        grandparent = (
+            doc.tasks_by_hash.get(parent_task.parent_hash)
+            if parent_task.parent_hash
+            else None
+        )
+        if grandparent is not None and grandparent.parent_hash is not None:
             raise click.ClickException(
-                f"Cannot nest under '{parent_hash}': only one level of subtasks is supported."
+                f"Cannot nest under '{parent_hash}': maximum nesting depth is 3 levels."
             )
         resolved_project = parent_task.project
     else:
@@ -453,8 +458,8 @@ def _remove_task(hash: str, path: Path | None) -> None:
 
 
 @cli.command("add")
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
-@click.option("--description", "-d", required=True, help="Task description.")
+@click.argument("description", type=str, required=True, help="Task description.")
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 @click.option("--tag", "-t", default=None, help="Optional category tag.")
 @click.option("--parent", "-p", "parent_hash", default=None, help="Parent task hash for a subtask.")
 @click.option("--project", "-P", default=None, help="Project to add under.")
@@ -462,8 +467,8 @@ def _remove_task(hash: str, path: Path | None) -> None:
 @click.option("--end-date", "-e", "end", type=str, default=None, help="End date YYYY-MM-DD.")
 @click.option("--duration", type=int, default=None, help="Duration in days (positive).")
 def add(
-    path: Path | None,
     description: str,
+    path: Path | None,
     tag: str | None,
     parent_hash: str | None,
     project: str | None,
@@ -477,7 +482,7 @@ def add(
 
 @cli.command("remove")
 @click.argument("hash")
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 def remove(hash: str, path: Path | None) -> None:
     """Remove the task with the given hash."""
     if _NOTE_ID_RE.match(hash):
@@ -502,7 +507,7 @@ def remove(hash: str, path: Path | None) -> None:
 
 @cli.command("annotate")
 @click.argument("note_text")
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
+@click.option("--file", "-f", "path", default=None, type=click.Path(dir_okay=False, path_type=Path), help="Path to the TODO.md file.")
 @click.option("--project", "-P", "project", default=None, help="Project to add the note under.")
 def annotate(note_text: str, path: Path | None, project: str | None) -> None:
     """Add a note under a project's ### Notes section."""
@@ -536,41 +541,6 @@ def annotate(note_text: str, path: Path | None, project: str | None) -> None:
     store.sync(doc2, todo)
     _console.print(f"tsk: annotated ({note_id}).")
 
-
-@cli.group(hidden=True)
-def task() -> None:
-    """(Deprecated) Use `tsk add` / `tsk remove`."""
-
-
-@task.command(name="add")
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
-@click.option("--description", "-d", required=True, help="Task description.")
-@click.option("--tag", "-t", default=None, help="Optional category tag.")
-@click.option("--parent", "-p", "parent_hash", default=None, help="Parent task hash for a subtask.")
-@click.option("--project", "-P", default=None, help="Project to add under.")
-@click.option("--start-date", "-s", "start", type=str, default=None, help="Start date YYYY-MM-DD.")
-@click.option("--end-date", "-e", "end", type=str, default=None, help="End date YYYY-MM-DD.")
-@click.option("--duration", type=int, default=None, help="Duration in days (positive).")
-def task_add(
-    path: Path | None,
-    description: str,
-    tag: str | None,
-    parent_hash: str | None,
-    project: str | None,
-    start: str | None,
-    end: str | None,
-    duration: int | None,
-) -> None:
-    """(Deprecated) Add a new task to the markdown."""
-    _add_task(path, description, tag, parent_hash, project, start, end, duration)
-
-
-@task.command(name="remove")
-@click.argument("hash")
-@click.argument("path", required=False, type=click.Path(dir_okay=False, path_type=Path))
-def task_remove(hash: str, path: Path | None) -> None:
-    """(Deprecated) Remove the task with the given hash."""
-    _remove_task(hash, path)
 
 
 @cli.command("config")
@@ -797,7 +767,7 @@ _FORMAT_HELP_TEXT = """\
   • A [italic]task[/italic] is any indented bullet starting with [cyan]- [ ][/cyan] or [cyan]- [x][/cyan].
   • Indentation is lenient (tabs or spaces). Tabs count as 4 spaces.
   • [italic]Subtasks[/italic] are checkbox bullets indented deeper than their parent.
-    Maximum nesting is 2 levels; deeper bullets are flattened with a warning.
+    Maximum nesting is 3 levels; deeper bullets are flattened with a warning.
   • [italic]Description[/italic] is the text after `:` plus subsequent non-checkbox lines
     up to the next checkbox bullet or H2.
   • [italic]Tag[/italic] is optional. Format: [cyan]tag(hash):[/cyan] or [cyan](hash):[/cyan] without tag.
@@ -848,7 +818,6 @@ def main() -> None:
     argv = sys.argv[1:]
     known_top = {
         "init",
-        "task",
         "add",
         "remove",
         "annotate",
@@ -863,7 +832,7 @@ def main() -> None:
     if not argv:
         argv = ["serve"]
     elif not argv[0].startswith("-") and argv[0] not in known_top:
-        argv = ["serve"] + argv
+        argv = ["serve", "--file"] + argv
     cli.main(args=argv, prog_name="tsk", standalone_mode=True)
 
 

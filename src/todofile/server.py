@@ -288,6 +288,17 @@ def build_app(todo_path: Path) -> Starlette:
         doc = _reload(todo_path)
         return JSONResponse(_serialise(doc, todo_path))
 
+    async def post_remove_task(request: Request) -> Response:
+        hash_ = request.path_params["hash"]
+        text = todo_path.read_text(encoding="utf-8")
+        try:
+            new_text = writer_mod.remove_task(text, hash_)
+        except KeyError:
+            return JSONResponse({"error": f"No task with hash '{hash_}'."}, status_code=404)
+        todo_path.write_text(new_text, encoding="utf-8")
+        doc = _reload(todo_path)
+        return JSONResponse(_serialise(doc, todo_path))
+
     async def post_config(request: Request) -> Response:
         body = await request.body()
         try:
@@ -343,6 +354,19 @@ def build_app(todo_path: Path) -> Starlette:
         doc = _reload(todo_path)
         return JSONResponse(_serialise(doc, todo_path))
 
+    async def post_remove_note(request: Request) -> Response:
+        note_id = request.path_params["note_id"]
+        text = todo_path.read_text(encoding="utf-8")
+        try:
+            new_text = writer_mod.remove_note(text, note_id)
+        except KeyError:
+            return JSONResponse({"error": f"No note with id '{note_id}'."}, status_code=404)
+        except ValueError as e:
+            return JSONResponse({"error": str(e)}, status_code=400)
+        todo_path.write_text(new_text, encoding="utf-8")
+        doc = _reload(todo_path)
+        return JSONResponse(_serialise(doc, todo_path))
+
     routes = [
         Route("/", index),
         Route("/api/tasks", get_tasks),
@@ -352,7 +376,9 @@ def build_app(todo_path: Path) -> Starlette:
         Route("/api/tasks/{hash}/dates", post_dates, methods=["POST"]),
         Route("/api/tasks/{hash}/done", post_done, methods=["POST"]),
         Route("/api/tasks/{hash}/description", post_description, methods=["POST"]),
+        Route("/api/tasks/{hash}/remove", post_remove_task, methods=["POST"]),
         Route("/api/notes/{note_id}/content", post_note, methods=["POST"]),
+        Route("/api/notes/{note_id}/remove", post_remove_note, methods=["POST"]),
         Route("/api/config", post_config, methods=["POST"]),
         Mount("/static", app=StaticFiles(directory=str(STATIC_DIR)), name="static"),
     ]

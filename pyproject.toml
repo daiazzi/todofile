@@ -1,6 +1,6 @@
 [project]
 name = "todofile"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local-first task manager powered by your TODO.md"
 authors = [{name = "Duccio Aiazzi", email = "duccioa@users.noreply.github.com"}]
 dependencies = [

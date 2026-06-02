@@ -37,6 +37,17 @@ def test_set_done_unknown_hash_raises():
         set_done("## p\n- [ ] (a4f9c): x\n", "fffff", True)
 
 
+def test_set_done_sub_subtask():
+    text = (
+        "## p\n"
+        "- [ ] (aaaaa): parent\n"
+        "  - [ ] (bbbbb): child\n"
+        "    - [ ] (ccccc): grandchild\n"
+    )
+    new_text = set_done(text, "ccccc", True)
+    assert "- [x] (ccccc):" in new_text or "- [X] (ccccc):" in new_text
+
+
 # --- /api/tasks/{hash}/done ---------------------------------------------------
 
 

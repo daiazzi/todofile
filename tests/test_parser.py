@@ -54,7 +54,7 @@ def test_subtask():
     assert len(doc.projects[0].tasks) == 1
 
 
-def test_deep_nesting_flattened():
+def test_three_level_nesting():
     text = (
         "## p\n"
         "- [ ] (aaaaa): root\n"
@@ -62,7 +62,22 @@ def test_deep_nesting_flattened():
         "    - [ ] (ccccc): level3\n"
     )
     doc = parse_text(text)
-    assert doc.tasks_by_hash["ccccc"].parent_hash == "aaaaa"
+    assert doc.tasks_by_hash["bbbbb"].parent_hash == "aaaaa"
+    assert doc.tasks_by_hash["ccccc"].parent_hash == "bbbbb"
+    assert doc.children_of("bbbbb") == [doc.tasks_by_hash["ccccc"]]
+    assert not any("flattened" in w for w in doc.warnings)
+
+
+def test_deep_nesting_flattened():
+    text = (
+        "## p\n"
+        "- [ ] (aaaaa): root\n"
+        "  - [ ] (bbbbb): level2\n"
+        "    - [ ] (ccccc): level3\n"
+        "      - [ ] (ddddd): level4\n"
+    )
+    doc = parse_text(text)
+    assert doc.tasks_by_hash["ddddd"].parent_hash == "bbbbb"
     assert any("flattened" in w for w in doc.warnings)
 
 

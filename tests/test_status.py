@@ -14,7 +14,7 @@ def test_status_with_path(tmp_path: Path):
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     ensure_sidecar(p)
     runner = CliRunner()
-    result = runner.invoke(cli, ["status", str(p)])
+    result = runner.invoke(cli, ["status", "--file", str(p)])
     assert result.exit_code == 0, result.output
     assert str(p) in result.output
     assert "down" in result.output
@@ -39,7 +39,7 @@ def test_status_reports_up_when_daemon_running(tmp_path: Path):
     pid, url = daemon_mod.start(p)
     try:
         runner = CliRunner()
-        result = runner.invoke(cli, ["status", str(p)])
+        result = runner.invoke(cli, ["status", "--file", str(p)])
         assert result.exit_code == 0, result.output
         assert "up" in result.output
         assert str(pid) in result.output
@@ -63,7 +63,7 @@ def test_restart_replaces_running_daemon(tmp_path: Path):
     pid, _ = daemon_mod.start(p)
     try:
         runner = CliRunner()
-        result = runner.invoke(cli, ["restart", str(p)])
+        result = runner.invoke(cli, ["restart", "--file", str(p)])
         assert result.exit_code == 0, result.output
         new_pid, _ = daemon_mod.read_status(p)
         assert new_pid is not None

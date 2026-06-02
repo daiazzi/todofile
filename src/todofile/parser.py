@@ -71,8 +71,8 @@ def parse_text(text: str, path: Path | None = None) -> ParsedDocument:
     warnings: list[str] = []
     title: str | None = None
 
-    # Nesting stack: list of (indent, task) at each level. The first element is
-    # the level-1 ancestor (top-level), the second would be level-2 (subtask).
+    # Nesting stack: list of (indent, task) at each level — level-1 (top),
+    # level-2 (subtask), level-3 (sub-subtask).
     stack: list[tuple[int, Task]] = []
 
     pending_task: Task | None = None
@@ -214,11 +214,14 @@ def parse_text(text: str, path: Path | None = None) -> ParsedDocument:
             elif len(stack) == 1:
                 parent_hash = stack[0][1].hash
                 push_level = 2
+            elif len(stack) == 2:
+                parent_hash = stack[1][1].hash
+                push_level = 3
             else:
-                # 3+ level → flatten to subtask of the level-1 root
-                parent_hash = stack[0][1].hash
-                push_level = 2
-                warnings.append(f"line {line_no}: deep nesting flattened to subtask")
+                # 4+ levels → flatten to sub-subtask of the level-2 parent
+                parent_hash = stack[1][1].hash
+                push_level = 3
+                warnings.append(f"line {line_no}: deep nesting flattened to sub-subtask")
 
             tag, h, desc = _parse_bullet_body(body, line_no, warnings)
 

@@ -132,6 +132,38 @@ def test_insert_subtask_after_existing_subtasks():
     assert len(doc.children_of("aaaaa")) == 2
 
 
+def test_insert_sub_subtask():
+    text = (
+        "## p\n"
+        "- [ ] (aaaaa): parent\n"
+        "  - [ ] (bbbbb): child\n"
+    )
+    new_text = insert_task(
+        text,
+        project="p",
+        parent_hash="bbbbb",
+        tag=None,
+        description="grandchild",
+        hash="ccccc",
+    )
+    doc = parse_text(new_text)
+    assert doc.tasks_by_hash["ccccc"].parent_hash == "bbbbb"
+    assert len(doc.children_of("bbbbb")) == 1
+
+
+def test_remove_sub_subtask():
+    text = (
+        "## p\n"
+        "- [ ] (aaaaa): parent\n"
+        "  - [ ] (bbbbb): child\n"
+        "    - [ ] (ccccc): grandchild\n"
+    )
+    new_text = remove_task(text, "ccccc")
+    doc = parse_text(new_text)
+    assert "ccccc" not in doc.tasks_by_hash
+    assert "bbbbb" in doc.tasks_by_hash
+
+
 def test_insert_creates_missing_project():
     text = "## one\n- [ ] (aaaaa): a\n"
     new_text = insert_task(

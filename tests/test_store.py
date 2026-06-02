@@ -30,6 +30,18 @@ def test_ensure_sidecar_creates_files(tmp_path: Path):
     assert (d / "config.yaml").exists()
 
 
+def test_ensure_sidecar_creates_gitignore(tmp_path: Path):
+    p = tmp_path / "TODO.md"
+    p.write_text("# x\n")
+    d = ensure_sidecar(p)
+    gi = d / ".gitignore"
+    assert gi.exists()
+    content = gi.read_text()
+    assert "daemon.pid" in content
+    assert "daemon.url" in content
+    assert "daemon.log" in content
+
+
 def test_ensure_sidecar_idempotent(tmp_path: Path):
     p = tmp_path / "TODO.md"
     p.write_text("# x\n")
@@ -163,7 +175,7 @@ def test_load_config_invalid_theme_falls_back(tmp_path: Path):
     p.write_text("# x\n")
     ensure_sidecar(p)
     (sidecar_dir(p) / "config.yaml").write_text("theme: rainbow\n")
-    assert load_config(p).theme == "dark"
+    assert load_config(p).theme == "light"
 
 
 def test_load_config_panel_flags_defaults(tmp_path: Path):

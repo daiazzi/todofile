@@ -137,6 +137,18 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;');
 }
 
+/** Walk tasks and nested subtasks (up to 3 levels). */
+function forEachTaskDFS(tasks, cb, depth = 0) {
+  for (const t of tasks || []) {
+    cb(t, depth);
+    if (t.subtasks?.length) forEachTaskDFS(t.subtasks, cb, depth + 1);
+  }
+}
+
+function taskVisible(t) {
+  return state.showCompleted || !t.done;
+}
+
 // ---------- data ----------
 
 async function fetchTasks() {
@@ -191,6 +203,15 @@ async function postDone(hash, done) {
   return r.json();
 }
 
+async function postRemove(hash) {
+  const r = await fetch(`/api/tasks/${hash}/remove`, { method: 'POST' });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({ error: 'remove failed' }));
+    throw new Error(data.error || 'remove failed');
+  }
+  return r.json();
+}
+
 async function postDescription(hash, description) {
   const r = await fetch(`/api/tasks/${hash}/description`, {
     method: 'POST',
@@ -213,6 +234,15 @@ async function postNoteContent(noteId, content) {
   if (!r.ok) {
     const data = await r.json().catch(() => ({ error: 'update failed' }));
     throw new Error(data.error || 'update failed');
+  }
+  return r.json();
+}
+
+async function postNoteRemove(noteId) {
+  const r = await fetch(`/api/notes/${noteId}/remove`, { method: 'POST' });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({ error: 'remove failed' }));
+    throw new Error(data.error || 'remove failed');
   }
   return r.json();
 }
@@ -311,14 +341,9 @@ function visibleTasks() {
   const out = [];
   for (const p of state.projects) {
     if (!state.activeProjects.has(p.name)) continue;
-    for (const t of p.tasks) {
-      if (!state.showCompleted && t.done) continue;
-      out.push(t);
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        out.push(c);
-      }
-    }
+    forEachTaskDFS(p.tasks, (t) => {
+      if (taskVisible(t)) out.push(t);
+    });
   }
   return out;
 }
@@ -337,12 +362,11 @@ function render() {
 
 function findTaskByHash(hash) {
   for (const p of state.projects) {
-    for (const t of p.tasks || []) {
-      if (t.hash === hash) return t;
-      for (const c of t.subtasks || []) {
-        if (c.hash === hash) return c;
-      }
-    }
+    let found = null;
+    forEachTaskDFS(p.tasks, (t) => {
+      if (t.hash === hash) found = t;
+    });
+    if (found) return found;
   }
   return null;
 }
@@ -352,7 +376,9 @@ function renderTodoPath() {
 }
 
 function renderBrand() {
-  $('#brand').textContent = state.title || 'tsk';
+  const label = state.title || 'tsk';
+  $('#brand').textContent = label;
+  document.title = state.title ? `todofile - ${state.title}` : 'todofile';
 }
 
 function renderShowCompleted() {
@@ -416,20 +442,69 @@ function renderProjectNotes(notes, projectName) {
   const body = document.createElement('div');
   body.className = 'project-notes-body';
   for (const note of notes) {
+    const noteWrap = document.createElement('div');
+    noteWrap.className = 'project-note-wrap';
+
     const item = document.createElement('div');
     item.className = 'project-note markdown-body';
     item.innerHTML = renderMarkdown(note.content || '');
     item.tabIndex = 0;
     item.setAttribute('role', 'button');
     item.setAttribute('aria-label', 'Open note');
-    item.addEventListener('click', () => openNoteModal(note, projectName));
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.project-note-actions')) return;
+      openNoteModal(note, projectName);
+    });
     item.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         openNoteModal(note, projectName);
       }
     });
-    body.appendChild(item);
+    noteWrap.appendChild(item);
+
+    const actionsCell = document.createElement('div');
+    actionsCell.className = 'project-note-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'task-action-btn task-edit-btn';
+    editBtn.title = 'Edit note';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openNoteModal(note, projectName, { edit: true });
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'task-action-btn task-remove-btn';
+    removeBtn.title = 'Remove note';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!note.hash) {
+        toast('Note has no id yet. Refresh and try again.', 'error');
+        return;
+      }
+      if (!confirm(`Remove note ${note.hash}?`)) return;
+      if (removeBtn.dataset.busy === '1') return;
+      removeBtn.dataset.busy = '1';
+      try {
+        const data = await postNoteRemove(note.hash);
+        applyData(data);
+        render();
+      } catch (err) {
+        toast(err.message, 'error');
+      } finally {
+        delete removeBtn.dataset.busy;
+      }
+    });
+
+    actionsCell.appendChild(editBtn);
+    actionsCell.appendChild(removeBtn);
+    noteWrap.appendChild(actionsCell);
+    body.appendChild(noteWrap);
   }
   wrap.appendChild(body);
   return wrap;
@@ -457,11 +532,7 @@ function renderList() {
     if (notesEl) section.appendChild(notesEl);
 
     for (const t of tasks) {
-      section.appendChild(renderTaskRow(t, false));
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        section.appendChild(renderTaskRow(c, true));
-      }
+      appendTaskRows(section, t, 0);
     }
     host.appendChild(section);
   }
@@ -470,9 +541,20 @@ function renderList() {
   }
 }
 
-function renderTaskRow(t, isSubtask) {
+function appendTaskRows(container, task, depth) {
+  if (!taskVisible(task)) return;
+  container.appendChild(renderTaskRow(task, depth));
+  for (const c of task.subtasks || []) {
+    appendTaskRows(container, c, depth + 1);
+  }
+}
+
+function renderTaskRow(t, depth) {
   const row = document.createElement('div');
-  row.className = 'task-row' + (isSubtask ? ' subtask' : '') + (t.done ? ' done' : '');
+  let cls = 'task-row';
+  if (depth > 0) cls += ` subtask subtask-depth-${depth}`;
+  if (t.done) cls += ' done';
+  row.className = cls;
   row.dataset.hash = t.hash;
   row.dataset.parent = t.parent_hash || '';
   row.dataset.project = t.project;
@@ -516,8 +598,8 @@ function renderTaskRow(t, isSubtask) {
 
   const meta = document.createElement('div');
   meta.className = 'task-meta';
-  const main = document.createElement('div');
-  main.className = 'task-desc';
+  const header = document.createElement('div');
+  header.className = 'task-desc-header';
   if (t.tag) {
     const tagEl = document.createElement('span');
     tagEl.className = 'task-tag';
@@ -525,22 +607,26 @@ function renderTaskRow(t, isSubtask) {
     const c = colorFor(t.tag);
     tagEl.style.color = c;
     tagEl.style.background = withAlpha(c, 0.18);
-    main.appendChild(tagEl);
+    header.appendChild(tagEl);
   }
   const hashEl = document.createElement('span');
   hashEl.className = 'task-hash';
   hashEl.textContent = t.hash;
-  main.appendChild(hashEl);
-  const descEl = document.createElement('span');
-  descEl.textContent = firstLine(t.description);
-  main.appendChild(descEl);
-  meta.appendChild(main);
-  const restDesc = restLines(t.description);
-  if (restDesc) {
-    const more = document.createElement('div');
-    more.className = 'task-description-extra';
-    more.textContent = restDesc;
-    meta.appendChild(more);
+  header.appendChild(hashEl);
+  const first = firstLine(t.description);
+  const rest = restLines(t.description);
+  if (first) {
+    const lineEl = document.createElement('span');
+    lineEl.className = 'task-desc-line markdown-inline';
+    lineEl.innerHTML = inlineMd(escapeHtml(first));
+    header.appendChild(lineEl);
+  }
+  meta.appendChild(header);
+  if (rest) {
+    const desc = document.createElement('div');
+    desc.className = 'task-description markdown-body';
+    desc.innerHTML = renderMarkdown(rest);
+    meta.appendChild(desc);
   }
   row.appendChild(meta);
 
@@ -562,12 +648,51 @@ function renderTaskRow(t, isSubtask) {
   endCell.appendChild(end);
   row.appendChild(endCell);
 
+  const actionsCell = document.createElement('div');
+  actionsCell.className = 'task-row-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'task-action-btn task-edit-btn';
+  editBtn.title = 'Edit task';
+  editBtn.textContent = '✎';
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openTaskModal(t, { edit: true });
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'task-action-btn task-remove-btn';
+  removeBtn.title = 'Remove task';
+  removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Remove task ${t.hash}?`)) return;
+    if (removeBtn.dataset.busy === '1') return;
+    removeBtn.dataset.busy = '1';
+    try {
+      const data = await postRemove(t.hash);
+      applyData(data);
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      delete removeBtn.dataset.busy;
+    }
+  });
+
+  actionsCell.appendChild(editBtn);
+  actionsCell.appendChild(removeBtn);
+  row.appendChild(actionsCell);
+
   // Open modal when clicking on the row (but not on interactive controls).
   row.addEventListener('click', (e) => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (e.target.closest('.task-check')) return;
     if (e.target.closest('.drag-handle')) return;
     if (e.target.closest('.date-cell')) return;
+    if (e.target.closest('.task-row-actions')) return;
     if (tag === 'input' || tag === 'button' || tag === 'a') return;
     openTaskModal(t);
   });
@@ -671,8 +796,8 @@ function computeReorder(project, parentHash, movedHash, targetHash, before) {
   if (!proj) return null;
   let siblings;
   if (parentHash) {
-    const parent = proj.tasks.find((t) => t.hash === parentHash);
-    if (!parent) return null;
+    const parent = findTaskByHash(parentHash);
+    if (!parent || parent.project !== project) return null;
     siblings = parent.subtasks || [];
   } else {
     siblings = proj.tasks;
@@ -741,9 +866,22 @@ function initSplitters() {
   );
 }
 
+function renderSubtaskTree(subtasks, depth) {
+  const ul = document.createElement('ul');
+  if (depth > 0) ul.className = 'subtask-nested';
+  for (const c of subtasks) {
+    const li = document.createElement('li');
+    li.textContent =
+      (c.done ? '✓ ' : '○ ') + (c.tag ? `${c.tag} ` : '') + firstLine(c.description);
+    if (c.subtasks?.length) li.appendChild(renderSubtaskTree(c.subtasks, depth + 1));
+    ul.appendChild(li);
+  }
+  return ul;
+}
+
 // ---------- modal ----------
 
-function openTaskModal(task) {
+function openTaskModal(task, options = {}) {
   const host = $('#modal-host');
   host.hidden = false;
   host.innerHTML = '';
@@ -866,21 +1004,17 @@ function openTaskModal(task) {
 
   editBtn.addEventListener('click', enterEdit);
 
-  if ((task.subtasks || []).length) {
+  if ((task.subtasks || []).length && !options.edit) {
     const subhead = document.createElement('h3');
     subhead.textContent = 'Subtasks';
     body.appendChild(subhead);
-    const ul = document.createElement('ul');
-    for (const c of task.subtasks) {
-      const li = document.createElement('li');
-      li.textContent = (c.done ? '✓ ' : '○ ') + (c.tag ? `${c.tag} ` : '') + firstLine(c.description);
-      ul.appendChild(li);
-    }
-    body.appendChild(ul);
+    body.appendChild(renderSubtaskTree(task.subtasks, 0));
   }
 
   host.appendChild(modal);
   host.addEventListener('click', closeModal, { once: true });
+
+  if (options.edit) enterEdit();
 }
 
 function closeModal() {
@@ -889,7 +1023,7 @@ function closeModal() {
   host.innerHTML = '';
 }
 
-function openNoteModal(note, projectName) {
+function openNoteModal(note, projectName, options = {}) {
   const host = $('#modal-host');
   host.hidden = false;
   host.innerHTML = '';
@@ -1004,6 +1138,8 @@ function openNoteModal(note, projectName) {
 
   host.appendChild(modal);
   host.addEventListener('click', closeModal, { once: true });
+
+  if (options.edit) enterEdit();
 }
 
 // ---------- markdown renderer (minimal subset) ----------
@@ -1125,13 +1261,9 @@ function ganttRowDescriptors() {
     if (tasks.length === 0 && notes.length === 0) continue;
     out.push({ kind: 'project-header', project: p.name });
     if (notes.length) out.push({ kind: 'project-notes', project: p.name });
-    for (const t of tasks) {
-      out.push({ kind: 'task', hash: t.hash, task: t });
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        out.push({ kind: 'task', hash: c.hash, task: c });
-      }
-    }
+    forEachTaskDFS(tasks, (t) => {
+      if (taskVisible(t)) out.push({ kind: 'task', hash: t.hash, task: t });
+    });
   }
   return out;
 }
