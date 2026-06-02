@@ -17,7 +17,7 @@
 - [x] REFACTOR(663d3): remove deprecated `tsk task` command
 - [x] FEAT(9bc04): the tab should show the title of the project (the h1)
 - [x] FEAT(f9786): support 3 levels of nested tasks
-- [ ] FEAT(e1338): tasks in task panel should be rendered as markdown
+- [x] FEAT(e1338): tasks in task panel should be rendered as markdown
 - [ ] FEAT(aae8b): New type of task `deadline` that has only one date and a different representation on the gantt
 - [ ] FEAT(8875a): description or subtitle for projects
   This requires some thought because it is not clear how to code it into the md and how to render it in the UI.

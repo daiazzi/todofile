@@ -531,8 +531,8 @@ function renderTaskRow(t, depth) {
 
   const meta = document.createElement('div');
   meta.className = 'task-meta';
-  const main = document.createElement('div');
-  main.className = 'task-desc';
+  const header = document.createElement('div');
+  header.className = 'task-desc-header';
   if (t.tag) {
     const tagEl = document.createElement('span');
     tagEl.className = 'task-tag';
@@ -540,22 +540,26 @@ function renderTaskRow(t, depth) {
     const c = colorFor(t.tag);
     tagEl.style.color = c;
     tagEl.style.background = withAlpha(c, 0.18);
-    main.appendChild(tagEl);
+    header.appendChild(tagEl);
   }
   const hashEl = document.createElement('span');
   hashEl.className = 'task-hash';
   hashEl.textContent = t.hash;
-  main.appendChild(hashEl);
-  const descEl = document.createElement('span');
-  descEl.textContent = firstLine(t.description);
-  main.appendChild(descEl);
-  meta.appendChild(main);
-  const restDesc = restLines(t.description);
-  if (restDesc) {
-    const more = document.createElement('div');
-    more.className = 'task-description-extra';
-    more.textContent = restDesc;
-    meta.appendChild(more);
+  header.appendChild(hashEl);
+  const first = firstLine(t.description);
+  const rest = restLines(t.description);
+  if (first) {
+    const lineEl = document.createElement('span');
+    lineEl.className = 'task-desc-line markdown-inline';
+    lineEl.innerHTML = inlineMd(escapeHtml(first));
+    header.appendChild(lineEl);
+  }
+  meta.appendChild(header);
+  if (rest) {
+    const desc = document.createElement('div');
+    desc.className = 'task-description markdown-body';
+    desc.innerHTML = renderMarkdown(rest);
+    meta.appendChild(desc);
   }
   row.appendChild(meta);
 

@@ -9,6 +9,7 @@
 - refactor!(CLI): remove deprecated `tsk task add` / `tsk task remove` commands.
 - refactor!(CLI): make option description and argument in cli tsk add
 - feat: support 3 levels of nested tasks (root → subtask → sub-subtask); deeper bullets in the markdown are flattened with a warning.
+- feat(UI): render task descriptions as markdown in the task panel (same renderer as the task popup).
 
 ## 0.2.0 (2026-05-29)
 
