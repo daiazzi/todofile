@@ -137,6 +137,18 @@ function escapeHtml(s) {
     .replaceAll('"', '&quot;');
 }
 
+/** Walk tasks and nested subtasks (up to 3 levels). */
+function forEachTaskDFS(tasks, cb, depth = 0) {
+  for (const t of tasks || []) {
+    cb(t, depth);
+    if (t.subtasks?.length) forEachTaskDFS(t.subtasks, cb, depth + 1);
+  }
+}
+
+function taskVisible(t) {
+  return state.showCompleted || !t.done;
+}
+
 // ---------- data ----------
 
 async function fetchTasks() {
@@ -311,14 +323,9 @@ function visibleTasks() {
   const out = [];
   for (const p of state.projects) {
     if (!state.activeProjects.has(p.name)) continue;
-    for (const t of p.tasks) {
-      if (!state.showCompleted && t.done) continue;
-      out.push(t);
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        out.push(c);
-      }
-    }
+    forEachTaskDFS(p.tasks, (t) => {
+      if (taskVisible(t)) out.push(t);
+    });
   }
   return out;
 }
@@ -337,12 +344,11 @@ function render() {
 
 function findTaskByHash(hash) {
   for (const p of state.projects) {
-    for (const t of p.tasks || []) {
-      if (t.hash === hash) return t;
-      for (const c of t.subtasks || []) {
-        if (c.hash === hash) return c;
-      }
-    }
+    let found = null;
+    forEachTaskDFS(p.tasks, (t) => {
+      if (t.hash === hash) found = t;
+    });
+    if (found) return found;
   }
   return null;
 }
@@ -459,11 +465,7 @@ function renderList() {
     if (notesEl) section.appendChild(notesEl);
 
     for (const t of tasks) {
-      section.appendChild(renderTaskRow(t, false));
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        section.appendChild(renderTaskRow(c, true));
-      }
+      appendTaskRows(section, t, 0);
     }
     host.appendChild(section);
   }
@@ -472,9 +474,20 @@ function renderList() {
   }
 }
 
-function renderTaskRow(t, isSubtask) {
+function appendTaskRows(container, task, depth) {
+  if (!taskVisible(task)) return;
+  container.appendChild(renderTaskRow(task, depth));
+  for (const c of task.subtasks || []) {
+    appendTaskRows(container, c, depth + 1);
+  }
+}
+
+function renderTaskRow(t, depth) {
   const row = document.createElement('div');
-  row.className = 'task-row' + (isSubtask ? ' subtask' : '') + (t.done ? ' done' : '');
+  let cls = 'task-row';
+  if (depth > 0) cls += ` subtask subtask-depth-${depth}`;
+  if (t.done) cls += ' done';
+  row.className = cls;
   row.dataset.hash = t.hash;
   row.dataset.parent = t.parent_hash || '';
   row.dataset.project = t.project;
@@ -673,8 +686,8 @@ function computeReorder(project, parentHash, movedHash, targetHash, before) {
   if (!proj) return null;
   let siblings;
   if (parentHash) {
-    const parent = proj.tasks.find((t) => t.hash === parentHash);
-    if (!parent) return null;
+    const parent = findTaskByHash(parentHash);
+    if (!parent || parent.project !== project) return null;
     siblings = parent.subtasks || [];
   } else {
     siblings = proj.tasks;
@@ -741,6 +754,19 @@ function initSplitters() {
     240,
     2000,
   );
+}
+
+function renderSubtaskTree(subtasks, depth) {
+  const ul = document.createElement('ul');
+  if (depth > 0) ul.className = 'subtask-nested';
+  for (const c of subtasks) {
+    const li = document.createElement('li');
+    li.textContent =
+      (c.done ? '✓ ' : '○ ') + (c.tag ? `${c.tag} ` : '') + firstLine(c.description);
+    if (c.subtasks?.length) li.appendChild(renderSubtaskTree(c.subtasks, depth + 1));
+    ul.appendChild(li);
+  }
+  return ul;
 }
 
 // ---------- modal ----------
@@ -872,13 +898,7 @@ function openTaskModal(task) {
     const subhead = document.createElement('h3');
     subhead.textContent = 'Subtasks';
     body.appendChild(subhead);
-    const ul = document.createElement('ul');
-    for (const c of task.subtasks) {
-      const li = document.createElement('li');
-      li.textContent = (c.done ? '✓ ' : '○ ') + (c.tag ? `${c.tag} ` : '') + firstLine(c.description);
-      ul.appendChild(li);
-    }
-    body.appendChild(ul);
+    body.appendChild(renderSubtaskTree(task.subtasks, 0));
   }
 
   host.appendChild(modal);
@@ -1127,13 +1147,9 @@ function ganttRowDescriptors() {
     if (tasks.length === 0 && notes.length === 0) continue;
     out.push({ kind: 'project-header', project: p.name });
     if (notes.length) out.push({ kind: 'project-notes', project: p.name });
-    for (const t of tasks) {
-      out.push({ kind: 'task', hash: t.hash, task: t });
-      for (const c of t.subtasks || []) {
-        if (!state.showCompleted && c.done) continue;
-        out.push({ kind: 'task', hash: c.hash, task: c });
-      }
-    }
+    forEachTaskDFS(tasks, (t) => {
+      if (taskVisible(t)) out.push({ kind: 'task', hash: t.hash, task: t });
+    });
   }
   return out;
 }

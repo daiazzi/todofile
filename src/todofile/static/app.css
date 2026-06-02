@@ -338,6 +338,15 @@ main:has(#gantt-pane[hidden]) #calendar-pane { flex: 1 1 auto; }
   background: rgba(255,255,255,0.015);
 }
 
+.task-row.subtask-depth-2 {
+  padding-left: 48px;
+}
+
+.subtask-nested {
+  margin: 0.25em 0 0.25em 1.25em;
+  padding-left: 1em;
+}
+
 [data-dates="off"] .task-row {
   grid-template-columns: 14px 16px 1fr 0 0;
 }

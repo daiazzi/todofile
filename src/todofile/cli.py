@@ -379,9 +379,14 @@ def _add_task(
         parent_task = doc.tasks_by_hash.get(parent_hash)
         if parent_task is None:
             raise click.ClickException(f"No task with hash '{parent_hash}' in {path}.")
-        if parent_task.parent_hash is not None:
+        grandparent = (
+            doc.tasks_by_hash.get(parent_task.parent_hash)
+            if parent_task.parent_hash
+            else None
+        )
+        if grandparent is not None and grandparent.parent_hash is not None:
             raise click.ClickException(
-                f"Cannot nest under '{parent_hash}': only one level of subtasks is supported."
+                f"Cannot nest under '{parent_hash}': maximum nesting depth is 3 levels."
             )
         resolved_project = parent_task.project
     else:
@@ -762,7 +767,7 @@ _FORMAT_HELP_TEXT = """\
   • A [italic]task[/italic] is any indented bullet starting with [cyan]- [ ][/cyan] or [cyan]- [x][/cyan].
   • Indentation is lenient (tabs or spaces). Tabs count as 4 spaces.
   • [italic]Subtasks[/italic] are checkbox bullets indented deeper than their parent.
-    Maximum nesting is 2 levels; deeper bullets are flattened with a warning.
+    Maximum nesting is 3 levels; deeper bullets are flattened with a warning.
   • [italic]Description[/italic] is the text after `:` plus subsequent non-checkbox lines
     up to the next checkbox bullet or H2.
   • [italic]Tag[/italic] is optional. Format: [cyan]tag(hash):[/cyan] or [cyan](hash):[/cyan] without tag.

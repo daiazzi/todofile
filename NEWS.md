@@ -8,6 +8,7 @@
 - feat(UI): browser tab title now shows `todofile - <project title>` using the H1 from the TODO file.
 - refactor!(CLI): remove deprecated `tsk task add` / `tsk task remove` commands.
 - refactor!(CLI): make option description and argument in cli tsk add
+- feat: support 3 levels of nested tasks (root → subtask → sub-subtask); deeper bullets in the markdown are flattened with a warning.
 
 ## 0.2.0 (2026-05-29)
 

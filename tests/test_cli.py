@@ -99,6 +99,41 @@ def test_task_add_subtask(tmp_path: Path):
     assert children[0].description == "child"
 
 
+def test_task_add_sub_subtask(tmp_path: Path):
+    p = tmp_path / "TODO.md"
+    p.write_text(
+        "## p\n"
+        "- [ ] (aaaaa): parent\n"
+        "  - [ ] (bbbbb): child\n"
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["add", "-f", str(p), "grandchild", "-p", "bbbbb"]
+    )
+    assert result.exit_code == 0, result.output
+    doc = parse(p)
+    grandchildren = doc.children_of("bbbbb")
+    assert len(grandchildren) == 1
+    assert grandchildren[0].parent_hash == "bbbbb"
+    assert grandchildren[0].description == "grandchild"
+
+
+def test_task_add_exceeds_max_depth(tmp_path: Path):
+    p = tmp_path / "TODO.md"
+    p.write_text(
+        "## p\n"
+        "- [ ] (aaaaa): root\n"
+        "  - [ ] (bbbbb): level2\n"
+        "    - [ ] (ccccc): level3\n"
+    )
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["add", "-f", str(p), "too deep", "-p", "ccccc"]
+    )
+    assert result.exit_code != 0
+    assert "maximum nesting depth is 3 levels" in result.output
+
+
 def test_task_add_unknown_parent(tmp_path: Path):
     p = tmp_path / "TODO.md"
     p.write_text("## p\n- [ ] (a4f9c): x\n")
