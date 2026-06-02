@@ -203,6 +203,15 @@ async function postDone(hash, done) {
   return r.json();
 }
 
+async function postRemove(hash) {
+  const r = await fetch(`/api/tasks/${hash}/remove`, { method: 'POST' });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({ error: 'remove failed' }));
+    throw new Error(data.error || 'remove failed');
+  }
+  return r.json();
+}
+
 async function postDescription(hash, description) {
   const r = await fetch(`/api/tasks/${hash}/description`, {
     method: 'POST',
@@ -581,12 +590,51 @@ function renderTaskRow(t, depth) {
   endCell.appendChild(end);
   row.appendChild(endCell);
 
+  const actionsCell = document.createElement('div');
+  actionsCell.className = 'task-row-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button';
+  editBtn.className = 'task-action-btn task-edit-btn';
+  editBtn.title = 'Edit task';
+  editBtn.textContent = '✎';
+  editBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openTaskModal(t, { edit: true });
+  });
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'task-action-btn task-remove-btn';
+  removeBtn.title = 'Remove task';
+  removeBtn.textContent = '✕';
+  removeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!confirm(`Remove task ${t.hash}?`)) return;
+    if (removeBtn.dataset.busy === '1') return;
+    removeBtn.dataset.busy = '1';
+    try {
+      const data = await postRemove(t.hash);
+      applyData(data);
+      render();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      delete removeBtn.dataset.busy;
+    }
+  });
+
+  actionsCell.appendChild(editBtn);
+  actionsCell.appendChild(removeBtn);
+  row.appendChild(actionsCell);
+
   // Open modal when clicking on the row (but not on interactive controls).
   row.addEventListener('click', (e) => {
     const tag = (e.target.tagName || '').toLowerCase();
     if (e.target.closest('.task-check')) return;
     if (e.target.closest('.drag-handle')) return;
     if (e.target.closest('.date-cell')) return;
+    if (e.target.closest('.task-row-actions')) return;
     if (tag === 'input' || tag === 'button' || tag === 'a') return;
     openTaskModal(t);
   });
@@ -775,7 +823,7 @@ function renderSubtaskTree(subtasks, depth) {
 
 // ---------- modal ----------
 
-function openTaskModal(task) {
+function openTaskModal(task, options = {}) {
   const host = $('#modal-host');
   host.hidden = false;
   host.innerHTML = '';
@@ -898,7 +946,7 @@ function openTaskModal(task) {
 
   editBtn.addEventListener('click', enterEdit);
 
-  if ((task.subtasks || []).length) {
+  if ((task.subtasks || []).length && !options.edit) {
     const subhead = document.createElement('h3');
     subhead.textContent = 'Subtasks';
     body.appendChild(subhead);
@@ -907,6 +955,8 @@ function openTaskModal(task) {
 
   host.appendChild(modal);
   host.addEventListener('click', closeModal, { once: true });
+
+  if (options.edit) enterEdit();
 }
 
 function closeModal() {

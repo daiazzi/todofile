@@ -340,7 +340,8 @@ main:has(#gantt-pane[hidden]) #calendar-pane { flex: 1 1 auto; }
     16px           /* checkbox */
     1fr            /* content */
     var(--date-col-w) /* start */
-    var(--date-col-w) /* end */;
+    var(--date-col-w) /* end */
+    44px;          /* actions */
   align-items: start;
   gap: 8px;
   padding: 5px 12px;
@@ -377,7 +378,7 @@ main:has(#gantt-pane[hidden]) #calendar-pane { flex: 1 1 auto; }
 }
 
 [data-dates="off"] .task-row {
-  grid-template-columns: 14px 16px 1fr 0 0;
+  grid-template-columns: 14px 16px 1fr 0 0 44px;
 }
 
 [data-dates="off"] .date-cell {
@@ -406,6 +407,47 @@ main:has(#gantt-pane[hidden]) #calendar-pane { flex: 1 1 auto; }
 
 .drag-handle:active {
   cursor: grabbing;
+}
+
+.task-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  padding-top: 4px;
+  opacity: 0;
+  transition: opacity 80ms;
+}
+
+.task-row:hover .task-row-actions {
+  opacity: 1;
+}
+
+.task-action-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 80ms, border-color 80ms;
+}
+
+.task-action-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.task-remove-btn:hover {
+  color: var(--err, #e05c5c);
+  border-color: var(--err, #e05c5c);
 }
 
 .task-row.drag-over-top {
