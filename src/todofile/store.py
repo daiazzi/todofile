@@ -18,16 +18,16 @@ _DEFAULT_CONFIG_BODY = """\
 # todofile config — edit and run `tsk` to apply.
 port: null
 
-theme: dark             # "dark" or "light"
-text_size: medium       # "small", "medium", or "big"
-show_dates: true        # default visibility of the start/end columns
+theme: light            # "dark" or "light"
+text_size: big          # "small", "medium", or "big"
+show_dates: false       # default visibility of the start/end columns
 show_gantt: false       # show the Gantt column (UI switch persists here)
 show_calendar: false    # show the Calendar column (UI switch persists here)
 show_weekends: false    # include Sat/Sun in the Gantt day grid (no UI switch)
 auto_refresh: true      # refresh UI automatically on TODO.md edits
 
 # New tasks get start=today, end=today+(default_duration-1) days. Use 0 for no default dates.
-default_duration: 1
+default_duration: 0
 
 # Tag colours. The "default" entry colours tags without a specific mapping.
 colors:
@@ -146,13 +146,13 @@ def load_config(todo_path: Path) -> Config:
                 colors[k] = v
     theme = raw.get("theme")
     if theme not in ("dark", "light"):
-        theme = "dark"
-    duration = raw.get("default_duration", 1)
+        theme = "light"
+    duration = raw.get("default_duration", 0)
     if not isinstance(duration, int) or duration < 0:
-        duration = 1
-    show_dates = raw.get("show_dates", True)
+        duration = 0
+    show_dates = raw.get("show_dates", False)
     if not isinstance(show_dates, bool):
-        show_dates = True
+        show_dates = False
     show_gantt = raw.get("show_gantt", False)
     if not isinstance(show_gantt, bool):
         show_gantt = False
@@ -162,9 +162,9 @@ def load_config(todo_path: Path) -> Config:
     show_weekends = raw.get("show_weekends", False)
     if not isinstance(show_weekends, bool):
         show_weekends = False
-    text_size = raw.get("text_size", "medium")
+    text_size = raw.get("text_size", "big")
     if text_size not in ("small", "medium", "big"):
-        text_size = "medium"
+        text_size = "big"
     auto_refresh = raw.get("auto_refresh", True)
     if not isinstance(auto_refresh, bool):
         auto_refresh = True

@@ -163,7 +163,7 @@ def test_load_config_invalid_theme_falls_back(tmp_path: Path):
     p.write_text("# x\n")
     ensure_sidecar(p)
     (sidecar_dir(p) / "config.yaml").write_text("theme: rainbow\n")
-    assert load_config(p).theme == "dark"
+    assert load_config(p).theme == "light"
 
 
 def test_load_config_panel_flags_defaults(tmp_path: Path):

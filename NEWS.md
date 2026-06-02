@@ -1,5 +1,9 @@
 # todofile
 
+## Unreleased
+
+- refactor!: change `tsk init` defaults to light theme, big text, no date columns, and no automatic task dates (`default_duration: 0`).
+
 ## 0.2.0 (2026-05-29)
 
 - refactor!: rename package to `todofile`.

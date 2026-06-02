@@ -17,15 +17,16 @@ from todofile.store import (
 )
 
 
-def test_sync_sets_default_dates_on_new_task(tmp_path: Path):
+def test_sync_no_default_dates_on_new_task(tmp_path: Path):
     p = tmp_path / "TODO.md"
     p.write_text("## p\n- [ ] (a4f9c): x\n")
     ensure_sidecar(p)
     sync(parse_text(p.read_text(), path=p), p)
     row = load_tasks_yaml(p)["a4f9c"]
-    today = date.today()
-    assert row.start == today
-    assert row.end == today  # default_duration = 1 → end == start
+    # default_duration is 0 → no dates assigned automatically
+    assert row.start is None
+    assert row.end is None
+    assert row.created is not None
 
 
 def test_sync_respects_configured_duration(tmp_path: Path):
