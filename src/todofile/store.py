@@ -13,6 +13,8 @@ from .models import Config, ParsedDocument, TaskMetadata
 
 _AGENT_MD_SOURCE = Path(__file__).parent / "static" / "agent.md"
 
+_GITIGNORE_BODY = "daemon.pid\ndaemon.url\ndaemon.log\n"
+
 
 _DEFAULT_CONFIG_BODY = """\
 # todofile config — edit and run `tsk` to apply.
@@ -68,6 +70,9 @@ def ensure_sidecar(todo_path: Path) -> Path:
     ap = d / "agent.md"
     if not ap.exists() and _AGENT_MD_SOURCE.exists():
         shutil.copyfile(_AGENT_MD_SOURCE, ap)
+    gp = d / ".gitignore"
+    if not gp.exists():
+        _atomic_write(gp, _GITIGNORE_BODY)
     return d
 
 
