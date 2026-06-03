@@ -22,9 +22,6 @@ requires = ["hatchling"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/todofile"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"src/todofile/static" = "todofile/static"
-
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["win-64", "linux-64", "osx-64", "osx-arm64"]
