@@ -4,15 +4,25 @@ Local-first task manager for dev/data projects. Your `TODO.md` stays the
 single human-edited, gittable source of truth; the manager adds dates and a
 Gantt/Calendar view backed by a sidecar YAML file.
 
-```
-$ tsk path/to/TODO.md
-tsk: serving /abs/path/to/TODO.md
+```bash
+$ touch TODO.md
+$ tsk init
+$ tsk up
+tsk: serving path/to/TODO.md
 tsk: open http://127.0.0.1:42117
+
+$ tsk down
+tsk: stopped daemon (pid 12345)
 ```
 
 The web UI opens in your default browser (or paste the URL into the VS Code
-Simple Browser). Ctrl-C stops the server. Run it detached with `tsk up
-<path>` / `tsk down <path>`.
+Simple Browser). `tsk down` stops the server. 
+
+Run `tsk serve` to start the server in foreground. `Ctrl-C` stops the server.
+
+Use `--file`/`-f` to specify a different TODO file.
+
+`todofile` is an alias for `tsk`.
 
 ## What it does
 
@@ -106,6 +116,9 @@ All flags can be combined in one call. Resolves the TODO file from cwd.
 |---|---|
 | `--dark-mode` / `--light-mode` | Set the UI theme. |
 | `--tag-col TAG:color` | Set a tag's colour. Repeatable; or pass `TAG1:c1,TAG2:c2` to set several in one flag. `color` accepts a palette name (`red`, `green`, `blue`, …) or a `#rrggbb` hex. |
+| `--show-gantt` / `--no-show-gantt` | Default visibility of the Gantt column in the UI. |
+| `--show-calendar` / `--no-show-calendar` | Default visibility of the Calendar column in the UI. |
+| `--show-weekends` / `--no-show-weekends` | Default visibility of the weekends in the Gantt column in the UI. |
 | `--show-dates` / `--no-show-dates` | Default visibility of the start/end columns in the UI. |
 | `--default-duration <N>` | Length (days) of the auto-set start/end on new tasks; `0` disables automatic dates. |
 | `--text-size <small\|medium\|big>` | UI text size. |
@@ -115,7 +128,8 @@ Examples:
 ```bash
 tsk config --dark-mode
 tsk config --tag-col FEAT:blue --tag-col FIX:red
-tsk config --no-show-dates --text-size big --default-duration 5
+tsk config --no-show-dates --text-size big --default-duration 5 --show-gantt --show-calendar --show-weekends
+tsk config --list-colors
 ```
 
 Editing `config.yaml` through `tsk config` rewrites the file via YAML
@@ -126,7 +140,7 @@ them.
 
 For `/path/to/myTODO.md` the manager uses:
 
-```
+```bash
 /path/to/.myTODO.md.dir/
     tasks.yaml      # dates + timestamps, one row per hash
     config.yaml     # port, theme, tag colours
@@ -134,17 +148,32 @@ For `/path/to/myTODO.md` the manager uses:
     daemon.pid      # only while detached (written by `tsk up`)
     daemon.url
     daemon.log
+    .gitignore     # contains daemon.pid, daemon.url, daemon.log
 ```
 
 `config.yaml` shape:
 
 ```yaml
-port: null               # int (1024-65535) or null for auto
-theme: dark              # "dark" or "light"
+port: 47209
+theme: light
+text_size: big
+show_dates: false
+show_gantt: false
+show_calendar: false
+show_weekends: false
+auto_refresh: true
+default_duration: 0
 colors:
-  default: "#8c8c8c"
-  FEAT: "#0080ff"
-  FIX:  "#ff0000"
+  default: '#8c8c8c'
+  FIX: '#ff0000'
+  FEAT: '#0080ff'
+  REFACTOR: '#ffbf00'
+  PERF: '#ff33ff'
+  TESTS: '#269900'
+  DOCS: '#663300'
+  ENV: '#999900'
+  MISC: '#339999'
+  DEADLINE: '#ffff00'
 ```
 
 Add `*/.*.dir/` to your `.gitignore` if you don't want to commit the
