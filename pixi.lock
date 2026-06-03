@@ -2209,8 +2209,8 @@ packages:
   timestamp: 1769460339384
 - pypi: ./
   name: todofile
-  version: 0.3.1
-  sha256: 971e49e75d5408f8927e094eae6a830af9ad7d0125614257f07cf9e3359c427b
+  version: 0.3.0
+  sha256: 1908d3534cd9b1b5348b86e444bca02acdd37eec45e9e911e87b493e7290c063
   requires_dist:
   - rich-click>=1.9.7,<2
   - starlette>=0.40,<1

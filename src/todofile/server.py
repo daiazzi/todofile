@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 import socket
 import threading
+import time
 import webbrowser
 from datetime import date
 from pathlib import Path
@@ -20,6 +23,47 @@ from . import parser as parser_mod
 from . import store
 from . import writer as writer_mod
 from .models import ParsedDocument
+
+
+class _ShutdownNoiseFilter(logging.Filter):
+    """Suppress expected noise when stopping with open SSE clients."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.shutting_down = False
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if self.shutting_down and record.name.startswith("uvicorn") and record.levelno >= logging.ERROR:
+            return False
+        if record.levelno < logging.ERROR:
+            return True
+        msg = record.getMessage()
+        if "timeout graceful shutdown exceeded" in msg:
+            return False
+        if "Exception in ASGI application" in msg:
+            exc = record.exc_info[1] if record.exc_info else None
+            if isinstance(exc, asyncio.CancelledError):
+                return False
+        exc = record.exc_info[1] if record.exc_info else None
+        return not isinstance(exc, asyncio.CancelledError)
+
+
+_shutdown_noise_filter = _ShutdownNoiseFilter()
+
+
+def _install_shutdown_noise_filter() -> None:
+    for name in ("uvicorn.error", "uvicorn"):
+        logging.getLogger(name).addFilter(_shutdown_noise_filter)
+
+
+async def _sleep_unless_disconnected(request: Request, seconds: float) -> bool:
+    """Sleep up to `seconds`, checking for disconnect every 100ms. Returns False if disconnected."""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        if await request.is_disconnected():
+            return False
+        await anyio.sleep(min(0.1, deadline - time.monotonic()))
+    return True
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -107,30 +151,38 @@ def build_app(todo_path: Path) -> Starlette:
         async def event_stream():
             last_mtime_ns: int | None = None
             last_sent_disabled = False
-            while True:
-                try:
-                    cfg = store.load_config(todo_path)
-                    if not cfg.auto_refresh:
-                        if not last_sent_disabled:
-                            last_sent_disabled = True
-                            yield "event: disabled\ndata: 1\n\n"
-                        await anyio.sleep(1.0)
-                        continue
-                    last_sent_disabled = False
+            try:
+                while True:
+                    if await request.is_disconnected():
+                        break
+                    try:
+                        cfg = store.load_config(todo_path)
+                        if not cfg.auto_refresh:
+                            if not last_sent_disabled:
+                                last_sent_disabled = True
+                                yield "event: disabled\ndata: 1\n\n"
+                            if not await _sleep_unless_disconnected(request, 1.0):
+                                break
+                            continue
+                        last_sent_disabled = False
 
-                    st = todo_path.stat()
-                    mtime_ns = getattr(st, "st_mtime_ns", int(st.st_mtime * 1e9))
-                    if last_mtime_ns is None:
-                        last_mtime_ns = mtime_ns
-                        yield "event: ready\ndata: 1\n\n"
-                    elif mtime_ns != last_mtime_ns:
-                        last_mtime_ns = mtime_ns
-                        yield f"event: changed\ndata: {mtime_ns}\n\n"
-                    await anyio.sleep(0.5)
-                except Exception:
-                    # Keep the connection alive even if the file is temporarily unreadable.
-                    yield "event: error\ndata: 1\n\n"
-                    await anyio.sleep(1.0)
+                        st = todo_path.stat()
+                        mtime_ns = getattr(st, "st_mtime_ns", int(st.st_mtime * 1e9))
+                        if last_mtime_ns is None:
+                            last_mtime_ns = mtime_ns
+                            yield "event: ready\ndata: 1\n\n"
+                        elif mtime_ns != last_mtime_ns:
+                            last_mtime_ns = mtime_ns
+                            yield f"event: changed\ndata: {mtime_ns}\n\n"
+                        if not await _sleep_unless_disconnected(request, 0.5):
+                            break
+                    except Exception:
+                        # Keep the connection alive even if the file is temporarily unreadable.
+                        yield "event: error\ndata: 1\n\n"
+                        if not await _sleep_unless_disconnected(request, 1.0):
+                            break
+            except asyncio.CancelledError:
+                return
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -411,10 +463,30 @@ def run(
     if open_browser:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
 
-    config = uvicorn.Config(app, host=host, port=port, log_level="warning")
+    _install_shutdown_noise_filter()
+
+    config = uvicorn.Config(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        timeout_graceful_shutdown=1,
+    )
     server = uvicorn.Server(config)
+
+    orig_handle_exit = server.handle_exit
+
+    def handle_exit(sig: int, frame) -> None:
+        if not server.should_exit:
+            print("\ntsk: stopping...", flush=True)
+            server.force_exit = True
+            _shutdown_noise_filter.shutting_down = True
+        orig_handle_exit(sig, frame)
+
+    server.handle_exit = handle_exit  # type: ignore[method-assign]
+
     try:
         server.run()
     except KeyboardInterrupt:
         pass
-    print("tsk: stopped")
+    print("tsk: stopped", flush=True)
