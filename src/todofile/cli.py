@@ -830,7 +830,7 @@ def main() -> None:
         "status",
     }
     if not argv:
-        argv = ["serve"]
+        argv = ["--help"]
     elif not argv[0].startswith("-") and argv[0] not in known_top:
         argv = ["serve", "--file"] + argv
     cli.main(args=argv, prog_name="tsk", standalone_mode=True)
