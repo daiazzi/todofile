@@ -1,6 +1,6 @@
 [project]
 name = "todofile"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local-first task manager powered by your TODO.md"
 authors = [{name = "Duccio Aiazzi", email = "duccioa@users.noreply.github.com"}]
 dependencies = [
@@ -14,6 +14,7 @@ license-files = ["LICENSE"]
 
 [project.scripts]
 tsk = "todofile.cli:main"
+todofile = "todofile.cli:main"
 
 [build-system]
 build-backend = "hatchling.build"
@@ -21,9 +22,6 @@ requires = ["hatchling"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/todofile"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/todofile/static" = "todofile/static"
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]

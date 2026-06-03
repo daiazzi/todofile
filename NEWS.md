@@ -1,5 +1,12 @@
 # todofile
 
+## 0.4.0 (2026-06-03)
+
+- feat(CLI): create CLI alias `todofile` for `tsk`.
+- feat(CLI): calling tsk or todofile without arguments should return the help message.
+- fix(installation): installation problem due to duplicate `tool.hatch.build.targets.wheel` entry
+- fix: tsk serve can be shut down with ctrl+C
+
 ## 0.3.0 (2026-06-02)
 
 - refactor!: change `tsk init` defaults to light theme, big text, no date columns, and no automatic task dates (`default_duration: 0`).
